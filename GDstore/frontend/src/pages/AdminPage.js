@@ -164,16 +164,25 @@ const AdminPage = () => {
     fetchDashboardOrders();
   }, []);
 
-  // Auto-refresh tab Đơn hàng mỗi 30 giây (bắt kịp thay đổi từ shipper)
+  // Auto-refresh dữ liệu badge (Đơn hàng và Shipper) mỗi 30 giây
   useEffect(() => {
-    if (tabValue !== 2) return;
-    const interval = setInterval(() => {
-      API.get('/orders/all').then(({ data }) => {
-        setOrders(data || []);
-      }).catch(() => {});
-    }, 30000);
+    const fetchBadgeData = async () => {
+      try {
+        const [ordersRes, appsRes] = await Promise.all([
+          API.get('/orders/all'),
+          API.get('/users/shipper-applications')
+        ]);
+        setOrders(ordersRes.data || []);
+        setShipperApplications(appsRes.data || []);
+      } catch (error) {
+        console.error('Lỗi tải dữ liệu thông báo:', error);
+      }
+    };
+
+    fetchBadgeData();
+    const interval = setInterval(fetchBadgeData, 30000);
     return () => clearInterval(interval);
-  }, [tabValue]); // eslint-disable-line
+  }, []);
 
   const handleChangeProductPage = (event, newPage) => setProductPage(newPage);
   const handleChangeProductRowsPerPage = (event) => {
