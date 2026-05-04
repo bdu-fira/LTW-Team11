@@ -3,7 +3,7 @@ import {
   Box, Typography, Card, CardContent, Chip, Button, Avatar,
   Grid, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, CircularProgress, Alert, Snackbar, Divider, IconButton, Badge,
-  Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+  Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Collapse
 } from '@mui/material';
 import {
   LocalShipping, CheckCircle, PhotoCamera, Logout,
@@ -28,136 +28,184 @@ function SectionHeader({ icon, color, count, title }) {
   );
 }
 
-// ── Component card đơn hàng ──
-function OrderCard({ order, mode, onClaim, onConfirm, onViewProof, currentUser }) {
-  const configs = {
-    claim:   { label: 'Chờ nhận',      color: '#2563eb', bg: '#eff6ff', icon: '📦' },
-    confirm: { label: 'Đang giao',        color: '#a2121e', bg: '#fff0f0', icon: '🚚' },
-    pending: { label: 'Chờ admin',       color: '#d97706', bg: '#fffbeb', icon: '⏳' },
-  };
-  const cfg = configs[mode];
-
+// ── Component table đơn hàng ──
+function OrderRow({ order, mode, onClaim, onConfirm, onViewProof, currentUser, cfg }) {
+  const [expanded, setExpanded] = useState(false);
+  
   return (
-    <Card sx={{
-      borderRadius: 2.5, boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-      border: `1.5px solid ${cfg.bg}`, overflow: 'hidden',
-      transition: 'box-shadow 0.2s', '&:hover': { boxShadow: '0 6px 24px rgba(0,0,0,0.14)' }
-    }}>
-      <Box sx={{ bgcolor: cfg.bg, px: 2.5, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="body1" fontWeight={800} color={cfg.color}>{cfg.icon} Đơn #{order.id}</Typography>
-          <Chip label={cfg.label} size="small" sx={{ bgcolor: cfg.color, color: 'white', fontWeight: 700, fontSize: '0.7rem' }} />
-        </Box>
-        <Typography variant="caption" color="text.secondary">{new Date(order.createdAt).toLocaleDateString('vi-VN')}</Typography>
-      </Box>
-
-      <CardContent sx={{ p: 2.5 }}>
-        {/* Thông tin shipper phụ trách — hiện cho tất cả */}
-        <Box sx={{
-          display: 'flex', alignItems: 'center', gap: 1.5, mb: 2,
-          p: 1.5, borderRadius: 1.5,
-          bgcolor: mode === 'claim' ? '#f1f5f9' : mode === 'confirm' ? '#f3f0ff' : '#fffbeb',
-          border: `1px dashed ${mode === 'claim' ? '#94a3b8' : mode === 'confirm' ? '#c4b5fd' : '#fcd34d'}`
-        }}>
-          {mode === 'claim' ? (
-            <>
-              <Avatar sx={{ width: 28, height: 28, bgcolor: '#94a3b8', fontSize: '0.75rem' }}>?</Avatar>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>SHIPPER PHỤ TRÁCH</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>Chưa có shipper nhận</Typography>
-              </Box>
-            </>
-          ) : (
-            <>
-              <Avatar sx={{ width: 28, height: 28, bgcolor: mode === 'confirm' ? '#a2121e' : '#d97706', fontSize: '0.75rem' }}>
-                {order.Shipper?.name?.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="caption" fontWeight={700} color={mode === 'confirm' ? '#a2121e' : '#d97706'}>
-                  SHIPPER PHỤ TRÁCH
-                </Typography>
-                <Typography variant="body2" fontWeight={700}>
-                  {order.Shipper?.name}
-                  {currentUser && order.Shipper?.id === currentUser.id && (
-                    <Chip label="(Bạn)" size="small" sx={{ ml: 0.8, height: 18, fontSize: '0.65rem', bgcolor: mode === 'confirm' ? '#fff0f0' : '#fef3c7', color: mode === 'confirm' ? '#a2121e' : '#d97706', fontWeight: 700 }} />
-                  )}
-                </Typography>
-                {order.Shipper?.phone && (
-                  <Typography variant="caption" color="text.secondary">📞 {order.Shipper.phone}</Typography>
-                )}
-              </Box>
-            </>
-          )}
-        </Box>
-
-        <Grid container spacing={2} alignItems="flex-start">
-          <Grid item xs={12} sm={8}>
-            <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
-              <Avatar sx={{ width: 36, height: 36, bgcolor: cfg.color, fontSize: '0.9rem' }}>
-                {order.User?.name?.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="body2" fontWeight={700}>{order.User?.name}</Typography>
-                <Typography variant="caption" color="text.secondary">📞 {order.phone}</Typography>
-              </Box>
+    <>
+      <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+        <TableCell>
+          <Typography variant="body2" fontWeight={800} color={cfg.color}>#{order.id}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar sx={{ width: 28, height: 28, bgcolor: cfg.color, fontSize: '0.75rem' }}>
+              {order.User?.name?.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.2 }}>{order.User?.name}</Typography>
+              <Typography variant="caption" color="text.secondary">📞 {order.phone}</Typography>
             </Box>
-
-            <Box sx={{ bgcolor: '#f8f8f8', borderRadius: 1.5, p: 1.5, mb: 1.5 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>📍 ĐỊA CHỈ GIAO HÀNG</Typography>
-              <Typography variant="body2" sx={{ mt: 0.3 }}>{order.shippingAddress}</Typography>
-            </Box>
-
-            {order.OrderItems?.slice(0, 2).map((item, i) => (
-              <Typography key={i} variant="caption" color="text.secondary" display="block">
-                • {item.productName} × {item.quantity}
-              </Typography>
-            ))}
-            {order.OrderItems?.length > 2 && (
-              <Typography variant="caption" color="text.secondary">+{order.OrderItems.length - 2} sản phẩm khác</Typography>
-            )}
-
-            {mode === 'pending' && order.deliveryNote && (
-              <Box sx={{ mt: 1.5, bgcolor: '#fffbeb', borderRadius: 1.5, p: 1.5, borderLeft: '3px solid #d97706' }}>
-                <Typography variant="caption" color="#d97706" fontWeight={700}>GHI CHÚ:</Typography>
-                <Typography variant="body2" sx={{ mt: 0.3 }}>{order.deliveryNote}</Typography>
-              </Box>
-            )}
-          </Grid>
-
-          <Grid item xs={12} sm={4} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-            <Typography variant="h6" fontWeight={900} color={cfg.color} sx={{ mb: 1 }}>
-              {fmt(order.totalAmount)}
+          </Box>
+        </TableCell>
+        <TableCell sx={{ maxWidth: 160 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {order.shippingAddress}
+          </Typography>
+        </TableCell>
+        <TableCell sx={{ maxWidth: 160 }}>
+          {order.OrderItems?.slice(0, 2).map((item, i) => (
+            <Typography key={i} variant="caption" color="text.secondary" display="block">
+              • {item.productName} ×{item.quantity}
             </Typography>
-
+          ))}
+          {order.OrderItems?.length > 2 && (
+            <Typography variant="caption" color={cfg.color}>+{order.OrderItems.length - 2} sản phẩm</Typography>
+          )}
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2" fontWeight={800} color={cfg.color} sx={{ whiteSpace: 'nowrap' }}>
+            {fmt(order.totalAmount)}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button size="small" variant="outlined" onClick={() => setExpanded(!expanded)}
+              sx={{ borderRadius: 1.5, borderColor: cfg.color, color: cfg.color, fontWeight: 700, fontSize: '0.72rem', textTransform: 'none', px: 1, py: 0.3, whiteSpace: 'nowrap' }}>
+              {expanded ? 'Thu gọn' : 'Chi tiết'}
+            </Button>
             {mode === 'claim' && (
-              <Button variant="contained" fullWidth onClick={onClaim} startIcon={<DirectionsBike />}
-                sx={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', borderRadius: 2, fontWeight: 700 }}>
-                Nhận đơn này
+              <Button size="small" variant="contained" onClick={() => onClaim(order.id)} startIcon={<DirectionsBike sx={{ fontSize: 14 }}/>}
+                sx={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', borderRadius: 1.5, fontWeight: 700, fontSize: '0.72rem', textTransform: 'none', px: 1, py: 0.3, whiteSpace: 'nowrap' }}>
+                Nhận đơn
               </Button>
             )}
             {mode === 'confirm' && (
               currentUser && order.Shipper?.id === currentUser.id ? (
-                <Button variant="contained" fullWidth onClick={onConfirm} startIcon={<PhotoCamera />}
-                  sx={{ background: 'linear-gradient(135deg, #a2121e, #c62828)', borderRadius: 2, fontWeight: 700 }}>
-                  Xác nhận giao
+                <Button size="small" variant="contained" onClick={() => onConfirm(order)} startIcon={<PhotoCamera sx={{ fontSize: 14 }}/>}
+                  sx={{ background: 'linear-gradient(135deg, #a2121e, #c62828)', borderRadius: 1.5, fontWeight: 700, fontSize: '0.72rem', textTransform: 'none', px: 1, py: 0.3, whiteSpace: 'nowrap' }}>
+                  Xác nhận
                 </Button>
               ) : (
-                <Box sx={{ bgcolor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 2, p: 1.5, textAlign: 'center' }}>
-                  <Typography variant="caption" color="#92400e" fontWeight={700}>🔒 Chỉ shipper phụ trách</Typography>
-                  <Typography variant="caption" color="#92400e" display="block">mới được xác nhận giao</Typography>
-                </Box>
+                <Chip label="Chỉ shipper PT" size="small" sx={{ bgcolor: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: '0.65rem' }} />
               )
             )}
             {mode === 'pending' && (
-              <Button variant="outlined" fullWidth onClick={onViewProof} startIcon={<ZoomIn />}
-                sx={{ borderRadius: 2, borderColor: '#d97706', color: '#d97706', fontWeight: 700 }}>
-                Xem ảnh đã gửi
+              <Button size="small" variant="contained" onClick={() => onViewProof(order)} startIcon={<ZoomIn sx={{ fontSize: 14 }}/>}
+                sx={{ bgcolor: '#d97706', color: 'white', borderRadius: 1.5, fontWeight: 700, fontSize: '0.72rem', textTransform: 'none', px: 1, py: 0.3, whiteSpace: 'nowrap' }}>
+                Xem ảnh
               </Button>
             )}
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+          </Box>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0, border: 0 }} colSpan={6}>
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Box sx={{ p: 2.5, bgcolor: '#fafafa', borderRadius: 2, mb: 2, mt: 1, border: `1px dashed ${cfg.color}55` }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 1.5, color: '#4c1d95', borderBottom: '1px solid #eee', pb: 0.5 }}>📦 THÔNG TIN GIAO HÀNG</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700}>KHÁCH HÀNG</Typography>
+                      <Typography variant="body2" fontWeight={600}>{order.User?.name} — 📞 {order.phone}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700}>ĐỊA CHỈ NHẬN HÀNG</Typography>
+                      <Typography variant="body2">{order.shippingAddress}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700}>SHIPPER PHỤ TRÁCH</Typography>
+                      {mode === 'claim' ? (
+                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>Chưa có shipper nhận</Typography>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          <Avatar sx={{ width: 24, height: 24, bgcolor: cfg.color, fontSize: '0.7rem' }}>
+                            {order.Shipper?.name?.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Typography variant="body2" fontWeight={700}>
+                            {order.Shipper?.name}
+                            {currentUser && order.Shipper?.id === currentUser.id && (
+                              <Chip label="(Bạn)" size="small" sx={{ ml: 0.5, height: 16, fontSize: '0.6rem', bgcolor: cfg.bg, color: cfg.color, fontWeight: 700 }} />
+                            )}
+                          </Typography>
+                          {order.Shipper?.phone && <Typography variant="caption">📞 {order.Shipper.phone}</Typography>}
+                        </Box>
+                      )}
+                    </Box>
+                    {order.deliveryNote && (
+                       <Box>
+                          <Typography variant="caption" color="text.secondary" fontWeight={700}>GHI CHÚ GIAO HÀNG</Typography>
+                          <Typography variant="body2" sx={{ bgcolor: '#fffbeb', p: 1, borderRadius: 1, borderLeft: '3px solid #d97706', mt: 0.5 }}>{order.deliveryNote}</Typography>
+                       </Box>
+                    )}
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 1.5, color: '#4c1d95', borderBottom: '1px solid #eee', pb: 0.5 }}>🛍️ CHI TIẾT SẢN PHẨM</Typography>
+                  <Box sx={{ maxHeight: 180, overflowY: 'auto', pr: 1, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bgcolor: '#ddd', borderRadius: '4px' } }}>
+                    {order.OrderItems?.map((item, i) => (
+                      <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: i === order.OrderItems.length - 1 ? 0 : '1px dashed #eee' }}>
+                        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                          <Avatar src={item.Product?.imageUrl ? `${BASE_URL}${item.Product.imageUrl}` : null} variant="rounded" sx={{ width: 40, height: 40, bgcolor: '#f0e6e6' }}>
+                            {item.productName?.charAt(0)}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.2 }}>{item.productName}</Typography>
+                            <Typography variant="caption" color="text.secondary">Số lượng: {item.quantity} {item.price ? `× ${fmt(item.price)}` : ''}</Typography>
+                          </Box>
+                        </Box>
+                        {item.price && (
+                          <Typography variant="body2" fontWeight={700}>{fmt(item.price * item.quantity)}</Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, pt: 1.5, borderTop: '2px solid #eee' }}>
+                    <Typography variant="subtitle2" fontWeight={800} color="text.secondary">TỔNG CỘNG:</Typography>
+                    <Typography variant="h6" fontWeight={900} color={cfg.color}>{fmt(order.totalAmount)}</Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+}
+
+function OrderTable({ orders, mode, onClaim, onConfirm, onViewProof, currentUser }) {
+  const configs = {
+    claim:   { label: 'Chờ nhận',      color: '#2563eb', bg: '#eff6ff' },
+    confirm: { label: 'Đang giao',        color: '#a2121e', bg: '#fff0f0' },
+    pending: { label: 'Chờ admin',       color: '#d97706', bg: '#fffbeb' },
+  };
+  const cfg = configs[mode];
+
+  return (
+    <TableContainer component={Paper} sx={{ borderRadius: 2.5, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: `1px solid ${cfg.bg}` }}>
+      <Table>
+        <TableHead>
+          <TableRow sx={{ bgcolor: cfg.bg }}>
+            {['Mã đơn', 'Khách hàng', 'Địa chỉ', 'Sản phẩm', 'Tổng tiền', 'Thao tác'].map(h => (
+              <TableCell key={h} sx={{ fontWeight: 800, color: cfg.color, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{h}</TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {orders.map(order => (
+            <OrderRow key={order.id} order={order} mode={mode} onClaim={onClaim} onConfirm={onConfirm} onViewProof={onViewProof} currentUser={currentUser} cfg={cfg} />
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 }
 
@@ -385,15 +433,9 @@ export default function ShipperPage() {
               <Box sx={{ mb: 4 }}>
                 <SectionHeader icon={<Assignment />} color="#3b82f6" count={availableOrders.length} title="Đơn hàng chờ nhận" />
                 <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-                  Nhấn <strong>"Nhận đơn này"</strong> để xác nhận bạn sẽ giao đơn hàng này.
+                  Nhấn <strong>"Nhận đơn"</strong> để xác nhận bạn sẽ giao đơn hàng này.
                 </Alert>
-                <Grid container spacing={2}>
-                  {availableOrders.map(order => (
-                    <Grid item xs={12} key={order.id}>
-                      <OrderCard order={order} mode="claim" onClaim={() => handleClaimOrder(order.id)} currentUser={user} />
-                    </Grid>
-                  ))}
-                </Grid>
+                <OrderTable orders={availableOrders} mode="claim" onClaim={handleClaimOrder} currentUser={user} />
               </Box>
             )}
 
@@ -402,15 +444,9 @@ export default function ShipperPage() {
               <Box sx={{ mb: 4 }}>
                 <SectionHeader icon={<DirectionsBike />} color="#7c3aed" count={myOrders.length} title="Đơn hàng bạn đang giao" />
                 <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-                  Nhấn <strong>"Xác nhận giao"</strong> và <strong>upload ảnh chứng minh</strong> khi giao xong.
+                  Nhấn <strong>"Xác nhận"</strong> và <strong>upload ảnh chứng minh</strong> khi giao xong.
                 </Alert>
-                <Grid container spacing={2}>
-                  {myOrders.map(order => (
-                    <Grid item xs={12} key={order.id}>
-                      <OrderCard order={order} mode="confirm" onConfirm={() => handleOpenConfirm(order)} currentUser={user} />
-                    </Grid>
-                  ))}
-                </Grid>
+                <OrderTable orders={myOrders} mode="confirm" onConfirm={handleOpenConfirm} currentUser={user} />
               </Box>
             )}
 
@@ -418,14 +454,8 @@ export default function ShipperPage() {
             {pendingOrders.length > 0 && (
               <Box>
                 <SectionHeader icon={<HourglassTop />} color="#d97706" count={pendingOrders.length} title="Chờ admin xác nhận" />
-                <Grid container spacing={2}>
-                  {pendingOrders.map(order => (
-                    <Grid item xs={12} key={order.id}>
-                      <OrderCard order={order} mode="pending" currentUser={user}
-                        onViewProof={() => setImageDialog({ open: true, url: `${BASE_URL}${order.deliveryProofImage}` })} />
-                    </Grid>
-                  ))}
-                </Grid>
+                <OrderTable orders={pendingOrders} mode="pending" currentUser={user}
+                  onViewProof={(order) => setImageDialog({ open: true, url: `${BASE_URL}${order.deliveryProofImage}` })} />
               </Box>
             )}
                 </>
