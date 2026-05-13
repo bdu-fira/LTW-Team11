@@ -6,9 +6,7 @@ import {
 import { Person, Email, Lock, ConfirmationNumber, Stars, NotificationsActive, CardGiftcard } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
-const REGISTER_BG =
-  'https://images.unsplash.com/photo-1616486701797-0f33f61038f2?auto=format&fit=crop&w=1400&q=80';
+import registerBg from './images/register-bg.png';
 
 const lineInputSx = {
   '& .MuiInputBase-root': {
@@ -77,32 +75,44 @@ const RegisterPage = () => {
       <Box
         sx={{
           flex: { xs: 0, md: 1.1 },
-          display: { xs: 'none', md: 'block' },
-          backgroundImage: `linear-gradient(140deg, rgba(10,10,10,0.86), rgba(28,12,12,0.78)), url('${REGISTER_BG}')`,
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
+          justifyContent: 'center',
+          backgroundImage: `linear-gradient(140deg, rgba(10,10,10,0.4), rgba(28,12,12,0.25)), url(${registerBg})`,
           backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
           position: 'relative',
-          p: 4
+          p: { md: 6 }
         }}
       >
-        <Box sx={{ color: 'white' }}>
-          <Typography sx={{ fontSize: 42, fontWeight: 700, mb: 1 }}>Đặc quyền thành viên</Typography>
-          <Typography sx={{ opacity: 0.82, fontSize: 22 / 1.5, maxWidth: 360, mb: 4 }}>
+        <Box sx={{ 
+          color: 'white', 
+          zIndex: 1, 
+          bgcolor: 'rgba(12, 6, 6, 0.45)', 
+          backdropFilter: 'blur(12px)', 
+          p: 4.5, 
+          borderRadius: 4, 
+          boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+          border: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <Typography sx={{ fontSize: 36, fontWeight: 700, mb: 1.5, textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>Đặc quyền thành viên</Typography>
+          <Typography sx={{ opacity: 0.95, fontSize: 15, maxWidth: 380, mb: 4.5, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
             Khám phá ưu đãi độc quyền dành riêng cho tài khoản GD Store.
           </Typography>
           {perks.map((perk) => (
             <Box key={perk.title} sx={{ display: 'flex', gap: 1.8, mb: 2.5 }}>
-              <Box sx={{ width: 38, height: 38, borderRadius: 1.5, bgcolor: 'rgba(179,0,22,0.3)', color: '#ff6f7e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: 'rgba(179,0,22,0.6)', color: '#ffd6db', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
                 {perk.icon}
               </Box>
               <Box>
-                <Typography sx={{ fontSize: 29 / 1.5, fontWeight: 600 }}>{perk.title}</Typography>
-                <Typography sx={{ fontSize: 14, opacity: 0.7 }}>{perk.desc}</Typography>
+                <Typography sx={{ fontSize: 19, fontWeight: 600, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{perk.title}</Typography>
+                <Typography sx={{ fontSize: 13.5, opacity: 0.85, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{perk.desc}</Typography>
               </Box>
             </Box>
           ))}
-          <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mt: 4, mb: 2 }} />
-          <Typography sx={{ fontSize: 12, letterSpacing: 1.4, opacity: 0.7 }}>THE ART OF LIVING - GD STORE</Typography>
+          <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', mt: 4, mb: 2.5 }} />
+          <Typography sx={{ fontSize: 12, letterSpacing: 1.5, opacity: 0.8, textShadow: '0 1px 3px rgba(0,0,0,0.5)', fontWeight: 600 }}>THE ART OF LIVING - GD STORE</Typography>
         </Box>
       </Box>
 

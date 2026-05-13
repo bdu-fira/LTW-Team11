@@ -4,7 +4,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
-import saleImage from './images/sale.png';
+import loginImage from './images/login-bg.png';
 
 const LoginPage = () => {
   const [email, setEmail] = useState(() => localStorage.getItem('gd_remembered_email') || '');
@@ -61,13 +61,7 @@ const LoginPage = () => {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f7e9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, md: 4 } }}>
       <Box sx={{ width: '100%', maxWidth: 1120, minHeight: { xs: 'auto', md: 700 }, borderRadius: 3, overflow: 'hidden', boxShadow: '0 18px 45px rgba(70,20,30,0.18)', bgcolor: '#fff', display: 'flex' }}>
-        <Box sx={{ flex: { xs: 0, md: 1.1 }, display: { xs: 'none', md: 'block' }, backgroundImage: `linear-gradient(180deg, rgba(7,11,18,0.35), rgba(7,11,18,0.65)), url(${saleImage})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
-          <Box sx={{ position: 'absolute', left: 40, bottom: 48, color: 'white' }}>
-            <Typography sx={{ fontSize: 48, lineHeight: 1.06, fontWeight: 300, maxWidth: 460 }}>
-              Kiến tạo không gian sống tinh tế từ những giá trị nguyên bản nhất.
-            </Typography>
-            <Typography sx={{ mt: 2, opacity: 0.8, letterSpacing: 1.5, fontSize: 13 }}>LUXE FURNISH IDENTITY</Typography>
-          </Box>
+        <Box sx={{ flex: { xs: 0, md: 1.1 }, display: { xs: 'none', md: 'block' }, backgroundImage: `url(${loginImage})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', position: 'relative' }}>
         </Box>
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', px: { xs: 3, md: 8 }, py: { xs: 4, md: 0 } }}>
           <Box sx={{ width: '100%', maxWidth: 410 }}>
