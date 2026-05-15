@@ -103,8 +103,14 @@ const ProductCard = ({ product }) => {
       <CardContent sx={{ flexGrow: 1, p: '10px 10px 8px !important' }}>
         {/* Rating */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-          <Rating value={4.5} size="small" readOnly sx={{ fontSize: '0.85rem', color: '#ffc107' }} />
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5, fontSize: '0.7rem' }}>(42)</Typography>
+          <Rating 
+            value={product.Reviews && product.Reviews.length > 0 ? product.Reviews.reduce((sum, r) => sum + r.rating, 0) / product.Reviews.length : 0} 
+            precision={0.1} size="small" readOnly 
+            sx={{ fontSize: '0.85rem', color: '#ffc107' }} 
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5, fontSize: '0.7rem' }}>
+            ({product.Reviews && product.Reviews.length > 0 ? product.Reviews.length : 'Chưa có đánh giá'})
+          </Typography>
         </Box>
 
         {/* Name */}

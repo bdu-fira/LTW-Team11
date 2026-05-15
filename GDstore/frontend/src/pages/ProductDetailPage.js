@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Grid, Typography, Box, Button,
   Paper, IconButton, Snackbar, Alert, Breadcrumbs, Link, Rating, Divider, Card, CardMedia, CardContent, Avatar, Chip,
-  Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, CircularProgress, TextField
+  Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, CircularProgress, TextField, Checkbox, MenuItem
 } from '@mui/material';
 import {
   ShoppingCart, Add, Remove, CheckCircle, LocalShipping, VerifiedUser, ArrowForward,
@@ -13,6 +13,12 @@ import API from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { getFirstImage } from '../utils/imageUtils';
+
+const BANK_OPTIONS = [
+  'Vietcombank', 'BIDV', 'VietinBank', 'Agribank', 'Techcombank', 'MB Bank',
+  'ACB', 'TPBank', 'VPBank', 'Sacombank', 'HDBank', 'SHB', 'SeABank', 'VIB',
+  'OCB', 'MSB'
+];
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -60,7 +66,7 @@ const ProductDetailPage = () => {
   const [userBanks, setUserBanks] = useState([]);
   const [showBankForm, setShowBankForm] = useState(false);
   const [bankForm, setBankForm] = useState({
-    bankName: '', accountNumber: '', accountName: ''
+    bankName: '', accountNumber: '', accountName: '', branchName: '', linkedPhone: '', identityNumber: '', agreeBankTerms: false, isDefault: false
   });
   const [submittingBank, setSubmittingBank] = useState(false);
 
@@ -409,15 +415,15 @@ const ProductDetailPage = () => {
           <Grid item xs={12} md={7} sx={{ minWidth: 0 }}>
             <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column-reverse', md: 'row' }, height: { xs: 'auto', md: 550 } }}>
               {/* Thumbnails */}
-              <Box sx={{ 
-                display: 'flex', flexDirection: { xs: 'row', md: 'column' }, 
+              <Box sx={{
+                display: 'flex', flexDirection: { xs: 'row', md: 'column' },
                 gap: 2, width: { xs: '100%', md: '80px' }, overflowX: 'auto', flexShrink: 0,
-                '&::-webkit-scrollbar': { display: 'none' } 
+                '&::-webkit-scrollbar': { display: 'none' }
               }}>
                 {images.slice(0, 5).map((img, idx) => (
                   <Box key={idx} onClick={() => setSelectedImage(idx)}
                     sx={{
-                      width: { xs: 60, md: '100%' }, aspectRatio: '1/1', cursor: 'pointer', borderRadius: '8px', 
+                      width: { xs: 60, md: '100%' }, aspectRatio: '1/1', cursor: 'pointer', borderRadius: '8px',
                       border: selectedImage === idx ? '2px solid #c62828' : '1px solid #e0e0e0',
                       overflow: 'hidden', transition: 'all 0.2s ease', '&:hover': { borderColor: '#c62828' },
                       p: 0.5, bgcolor: '#fff'
@@ -429,9 +435,9 @@ const ProductDetailPage = () => {
               </Box>
 
               {/* Main Image */}
-              <Box sx={{ 
-                flex: 1, bgcolor: '#fff', borderRadius: '12px', display: 'flex', alignItems: 'center', 
-                justifyContent: 'center', position: 'relative', border: '1px solid #f0f0f0', overflow: 'hidden' 
+              <Box sx={{
+                flex: 1, bgcolor: '#fff', borderRadius: '12px', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', position: 'relative', border: '1px solid #f0f0f0', overflow: 'hidden'
               }}>
                 <img src={images[selectedImage]} alt={product.name} style={{ width: '90%', height: '90%', objectFit: 'contain', animation: 'fadeIn 0.4s ease' }} />
               </Box>
@@ -442,19 +448,19 @@ const ProductDetailPage = () => {
           <Grid item xs={12} md={5} sx={{ minWidth: 0 }}>
             <Box sx={{ pt: { md: 2 } }}>
               {product.isFlashSale && (
-                <Chip label={`FLASH SALE - ${product.flashSaleDiscount || 15}% OFF`} size="small" 
+                <Chip label={`FLASH SALE - ${product.flashSaleDiscount || 15}% OFF`} size="small"
                   sx={{ bgcolor: '#ffebee', color: '#c62828', fontWeight: 800, borderRadius: '4px', mb: 2.5, letterSpacing: '0.5px' }} />
               )}
-              
+
               <Typography variant="h4" fontWeight={800} color="#1a1a1a" sx={{ mb: 2, lineHeight: 1.3, fontSize: { xs: '1.6rem', md: '2rem' } }}>
                 {product.name}
               </Typography>
-              
+
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-                 <Rating value={reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0} precision={0.1} size="small" readOnly sx={{ color: '#c62828' }} />
-                 <Typography variant="body2" color="#777" fontWeight={500}>
-                   ({reviewsLoading ? '...' : (reviews.length > 0 ? `${reviews.length} đánh giá khách hàng` : 'Chưa có đánh giá')})
-                 </Typography>
+                <Rating value={reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0} precision={0.1} size="small" readOnly sx={{ color: '#c62828' }} />
+                <Typography variant="body2" color="#777" fontWeight={500}>
+                  ({reviewsLoading ? '...' : (reviews.length > 0 ? `${reviews.length} đánh giá khách hàng` : 'Chưa có đánh giá')})
+                </Typography>
               </Box>
 
               {/* Price */}
@@ -470,9 +476,9 @@ const ProductDetailPage = () => {
                   )}
                 </Box>
                 {product.price > finalDiscountedPrice && (
-                   <Typography variant="body2" fontWeight={700} sx={{ color: '#2e7d32' }}>
-                     Tiết kiệm {formatPrice(product.price - finalDiscountedPrice)} ({product.flashSaleDiscount || 15}%)
-                   </Typography>
+                  <Typography variant="body2" fontWeight={700} sx={{ color: '#2e7d32' }}>
+                    Tiết kiệm {formatPrice(product.price - finalDiscountedPrice)} ({product.flashSaleDiscount || 15}%)
+                  </Typography>
                 )}
               </Box>
 
@@ -518,48 +524,48 @@ const ProductDetailPage = () => {
 
         {/* ════ 2. BOTTOM DETAILS AREA (Details + Spec Table) ════ */}
         <Grid container spacing={{ xs: 4, lg: 8 }} sx={{ mb: 8 }}>
-           <Grid item xs={12} md={6}>
-             <Typography variant="h5" fontWeight={800} color="#1a1a1a" sx={{ mb: 3 }}>
-               Chi tiết sản phẩm
-             </Typography>
-             <Typography variant="body2" color="#555" sx={{ lineHeight: 1.8, mb: 4 }}>
-               {product.description || 'Sản phẩm là công cụ tối ưu cho các dự án thủ công, sửa chữa gia đình và đóng gói chuyên nghiệp. Được thiết kế với hệ thống tiên tiến, máy có thể đạt hiệu suất lý tưởng, giúp tiết kiệm thời gian chờ đợi đáng kể.'}
-             </Typography>
-             
-             <Grid container spacing={2}>
-               <Grid item xs={12} sm={6}>
-                 <Box sx={{ p: 2, border: '1px solid #f0f0f0', borderRadius: '8px', display: 'flex', gap: 2, alignItems: 'flex-start', bgcolor: 'white' }}>
-                   <Box sx={{ bgcolor: '#fff5f5', p: 1, borderRadius: '50%' }}><CheckCircle sx={{ color: '#c62828', fontSize: 18 }} /></Box>
-                   <Box>
-                     <Typography variant="body2" fontWeight={800} color="#1a1a1a" sx={{ mb: 0.5 }}>Chất lượng cao</Typography>
-                     <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block' }}>Vật liệu siêu bền bảo vệ độ bền cực tốt.</Typography>
-                   </Box>
-                 </Box>
-               </Grid>
-               <Grid item xs={12} sm={6}>
-                  <Box sx={{ p: 2, border: '1px solid #f0f0f0', borderRadius: '8px', display: 'flex', gap: 2, alignItems: 'flex-start', bgcolor: 'white' }}>
-                   <Box sx={{ bgcolor: '#fff5f5', p: 1, borderRadius: '50%' }}><VerifiedUser sx={{ color: '#c62828', fontSize: 18 }} /></Box>
-                   <Box>
-                     <Typography variant="body2" fontWeight={800} color="#1a1a1a" sx={{ mb: 0.5 }}>Bảo hành 12 tháng</Typography>
-                     <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block' }}>Cam kết bảo hành chính hãng trong vòng 1 năm.</Typography>
-                   </Box>
-                 </Box>
-               </Grid>
-             </Grid>
-           </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h5" fontWeight={800} color="#1a1a1a" sx={{ mb: 3 }}>
+              Chi tiết sản phẩm
+            </Typography>
+            <Typography variant="body2" color="#555" sx={{ lineHeight: 1.8, mb: 4 }}>
+              {product.description || 'Sản phẩm là công cụ tối ưu cho các dự án thủ công, sửa chữa gia đình và đóng gói chuyên nghiệp. Được thiết kế với hệ thống tiên tiến, máy có thể đạt hiệu suất lý tưởng, giúp tiết kiệm thời gian chờ đợi đáng kể.'}
+            </Typography>
 
-           <Grid item xs={12} md={6}>
-             <Box sx={{ bgcolor: '#fff5f5', p: { xs: 3, md: 4 }, borderRadius: '16px' }}>
-               <Typography variant="h6" fontWeight={800} color="#1a1a1a" sx={{ mb: 3 }}>
-                 Thông số kỹ thuật
-               </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ p: 2, border: '1px solid #f0f0f0', borderRadius: '8px', display: 'flex', gap: 2, alignItems: 'flex-start', bgcolor: 'white' }}>
+                  <Box sx={{ bgcolor: '#fff5f5', p: 1, borderRadius: '50%' }}><CheckCircle sx={{ color: '#c62828', fontSize: 18 }} /></Box>
+                  <Box>
+                    <Typography variant="body2" fontWeight={800} color="#1a1a1a" sx={{ mb: 0.5 }}>Chất lượng cao</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block' }}>Vật liệu siêu bền bảo vệ độ bền cực tốt.</Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ p: 2, border: '1px solid #f0f0f0', borderRadius: '8px', display: 'flex', gap: 2, alignItems: 'flex-start', bgcolor: 'white' }}>
+                  <Box sx={{ bgcolor: '#fff5f5', p: 1, borderRadius: '50%' }}><VerifiedUser sx={{ color: '#c62828', fontSize: 18 }} /></Box>
+                  <Box>
+                    <Typography variant="body2" fontWeight={800} color="#1a1a1a" sx={{ mb: 0.5 }}>Bảo hành 12 tháng</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block' }}>Cam kết bảo hành chính hãng trong vòng 1 năm.</Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Box sx={{ bgcolor: '#fff5f5', p: { xs: 3, md: 4 }, borderRadius: '16px' }}>
+              <Typography variant="h6" fontWeight={800} color="#1a1a1a" sx={{ mb: 3 }}>
+                Thông số kỹ thuật
+              </Typography>
               {[
-                 { label: 'Công suất', val: '60W - 100W' },
-                 { label: 'Nhiệt độ hoạt động', val: '140 - 220°C' },
-                 { label: 'Đường kính keo', val: '11mm' },
-                 { label: 'Chất liệu thân', val: 'Nhựa ABS chịu nhiệt' },
-                 { label: 'Trọng lượng', val: '350g' },
-               ].map((s, i) => (
+                { label: 'Công suất', val: '60W - 100W' },
+                { label: 'Nhiệt độ hoạt động', val: '140 - 220°C' },
+                { label: 'Đường kính keo', val: '11mm' },
+                { label: 'Chất liệu thân', val: 'Nhựa ABS chịu nhiệt' },
+                { label: 'Trọng lượng', val: '350g' },
+              ].map((s, i) => (
                 <Box
                   key={i}
                   sx={{
@@ -577,15 +583,15 @@ const ProductDetailPage = () => {
                   <Typography variant="body2" color="#1a1a1a" fontWeight={800} sx={{ lineHeight: 1.5, textAlign: 'right' }}>
                     {s.val}
                   </Typography>
-                 </Box>
-               ))}
-             </Box>
-           </Grid>
+                </Box>
+              ))}
+            </Box>
+          </Grid>
         </Grid>
 
-                <Divider sx={{ mb: 8, borderColor: '#eee' }} />
+        <Divider sx={{ mb: 8, borderColor: '#eee' }} />
 
-                {/* ════ 4. REVIEWS SECTION ════ */}
+        {/* ════ 4. REVIEWS SECTION ════ */}
         <Box sx={{ bgcolor: '#fdf0f0', py: 6, px: { xs: 2, sm: 4, md: 6 }, borderRadius: '32px', mb: 8 }}>
           <Typography variant="h4" fontWeight={800} color="#3e2723" sx={{ mb: 4, letterSpacing: '-0.5px' }}>
             Đánh giá từ khách hàng
@@ -596,29 +602,29 @@ const ProductDetailPage = () => {
             <Grid item xs={12} md={4}>
               <Box sx={{ bgcolor: '#fff5f5', borderRadius: '24px', py: 5, px: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Typography variant="h1" fontWeight={800} color="#b71c1c" sx={{ mb: 1, fontSize: '4.5rem', lineHeight: 1 }}>
-                   {(reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) : 0).toFixed(1)}
+                  {(reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) : 0).toFixed(1)}
                 </Typography>
                 <Rating value={reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0} precision={0.1} readOnly sx={{ color: '#b71c1c', mb: 2, fontSize: '1.8rem' }} />
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 4, fontSize: '0.85rem' }}>Dựa trên {reviews.length} lượt đánh giá thực tế</Typography>
-                
+
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {[
-                    { s: 5, c: reviews.filter(r => r.rating === 5).length }, 
-                    { s: 4, c: reviews.filter(r => r.rating === 4).length }, 
-                    { s: 3, c: reviews.filter(r => r.rating === 3).length }, 
-                    { s: 2, c: reviews.filter(r => r.rating === 2).length }, 
+                    { s: 5, c: reviews.filter(r => r.rating === 5).length },
+                    { s: 4, c: reviews.filter(r => r.rating === 4).length },
+                    { s: 3, c: reviews.filter(r => r.rating === 3).length },
+                    { s: 2, c: reviews.filter(r => r.rating === 2).length },
                     { s: 1, c: reviews.filter(r => r.rating === 1).length }
                   ].map(line => {
-                     const percent = reviews.length > 0 ? Math.round((line.c / reviews.length) * 100) : 0;
-                     return (
-                       <Box key={line.s} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                         <Typography variant="body2" fontWeight={800} color="#3e2723" sx={{ minWidth: 12 }}>{line.s}</Typography>
-                         <Box sx={{ flex: 1, height: 8, bgcolor: '#fff', borderRadius: 10, overflow: 'hidden' }}>
-                           <Box sx={{ width: `${percent}%`, bgcolor: '#b71c1c', height: '100%', borderRadius: 10 }} />
-                         </Box>
-                         <Typography variant="caption" color="#795548" sx={{ minWidth: 32, textAlign: 'right', fontWeight: 600 }}>{percent}%</Typography>
-                       </Box>
-                     );
+                    const percent = reviews.length > 0 ? Math.round((line.c / reviews.length) * 100) : 0;
+                    return (
+                      <Box key={line.s} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="body2" fontWeight={800} color="#3e2723" sx={{ minWidth: 12 }}>{line.s}</Typography>
+                        <Box sx={{ flex: 1, height: 8, bgcolor: '#fff', borderRadius: 10, overflow: 'hidden' }}>
+                          <Box sx={{ width: `${percent}%`, bgcolor: '#b71c1c', height: '100%', borderRadius: 10 }} />
+                        </Box>
+                        <Typography variant="caption" color="#795548" sx={{ minWidth: 32, textAlign: 'right', fontWeight: 600 }}>{percent}%</Typography>
+                      </Box>
+                    );
                   })}
                 </Box>
               </Box>
@@ -641,27 +647,27 @@ const ProductDetailPage = () => {
                 <Grid container spacing={3} sx={{ mb: 3 }}>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="body2" fontWeight={700} color="#5d4037" sx={{ mb: 1.5 }}>Tên của bạn</Typography>
-                    <TextField 
-                      fullWidth size="medium" placeholder="Nhập tên..." 
+                    <TextField
+                      fullWidth size="medium" placeholder="Nhập tên..."
                       value={user ? user.name : ''} disabled={!user}
-                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fce4e4', borderRadius: '12px', '& fieldset': { border: 'none' } } }} 
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fce4e4', borderRadius: '12px', '& fieldset': { border: 'none' } } }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="body2" fontWeight={700} color="#5d4037" sx={{ mb: 1.5 }}>Đánh giá (Sao)</Typography>
                     <Box sx={{ height: 53, bgcolor: '#fce4e4', borderRadius: '12px', display: 'flex', alignItems: 'center', px: 2 }}>
-                       <Rating value={reviewForm.rating} onChange={(e, val) => setReviewForm({ ...reviewForm, rating: val })} disabled={!user} sx={{ color: '#b71c1c' }} />
+                      <Rating value={reviewForm.rating} onChange={(e, val) => setReviewForm({ ...reviewForm, rating: val })} disabled={!user} sx={{ color: '#b71c1c' }} />
                     </Box>
                   </Grid>
                 </Grid>
 
                 <Typography variant="body2" fontWeight={700} color="#5d4037" sx={{ mb: 1.5 }}>Nội dung đánh giá</Typography>
-                <TextField 
-                  fullWidth multiline rows={4} 
-                  placeholder="Chia sẻ trải nghiệm của bạn..." 
+                <TextField
+                  fullWidth multiline rows={4}
+                  placeholder="Chia sẻ trải nghiệm của bạn..."
                   disabled={!user}
                   value={reviewForm.comment} onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  sx={{ mb: 4, '& .MuiOutlinedInput-root': { bgcolor: '#fce4e4', borderRadius: '12px', '& fieldset': { border: 'none' } } }} 
+                  sx={{ mb: 4, '& .MuiOutlinedInput-root': { bgcolor: '#fce4e4', borderRadius: '12px', '& fieldset': { border: 'none' } } }}
                 />
 
                 <Button
@@ -677,24 +683,24 @@ const ProductDetailPage = () => {
 
           {/* Review List */}
           <Box sx={{ mt: 2, px: { xs: 0, md: 2 } }}>
-             {reviewsLoading ? (
-               <Typography variant="body2" color="text.secondary">Đang tải đánh giá...</Typography>
-             ) : reviews.length === 0 ? (
-               <Typography variant="body2" color="#795548">Hãy trở thành người đầu tiên đánh giá sản phẩm này!</Typography>
-             ) : (
-               <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                 {reviews.map((rv, idx) => (
-                   <Box key={idx} sx={{ py: 4, borderBottom: idx < reviews.length - 1 ? '1px solid #f9ebeb' : 'none', display: 'flex', gap: 3 }}>
-                     <Avatar sx={{ width: 50, height: 50, bgcolor: '#fce4e4', color: '#b71c1c', fontWeight: 900, fontSize: '1.2rem' }}>
-                       {rv.User?.name?.charAt(0).toUpperCase() || 'U'}
-                     </Avatar>
-                     <Box sx={{ flex: 1 }}>
-                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                         <Typography variant="body1" fontWeight={800} color="#3e2723">{maskUsername(rv.User?.name)}</Typography>
-                         <Typography variant="caption" color="#a1887f" fontWeight={500}>{new Date(rv.createdAt).toLocaleDateString('vi-VN')}</Typography>
-                       </Box>
-                       <Rating value={rv.rating} size="small" readOnly sx={{ color: '#b71c1c', fontSize: '1rem', mb: 1.5 }} />
-                       <Typography variant="body2" color="#5d4037" sx={{ lineHeight: 1.7 }}>{rv.comment}</Typography>
+            {reviewsLoading ? (
+              <Typography variant="body2" color="text.secondary">Đang tải đánh giá...</Typography>
+            ) : reviews.length === 0 ? (
+              <Typography variant="body2" color="#795548">Hãy trở thành người đầu tiên đánh giá sản phẩm này!</Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                {reviews.map((rv, idx) => (
+                  <Box key={idx} sx={{ py: 4, borderBottom: idx < reviews.length - 1 ? '1px solid #f9ebeb' : 'none', display: 'flex', gap: 3 }}>
+                    <Avatar sx={{ width: 50, height: 50, bgcolor: '#fce4e4', color: '#b71c1c', fontWeight: 900, fontSize: '1.2rem' }}>
+                      {rv.User?.name?.charAt(0).toUpperCase() || 'U'}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                        <Typography variant="body1" fontWeight={800} color="#3e2723">{maskUsername(rv.User?.name)}</Typography>
+                        <Typography variant="caption" color="#a1887f" fontWeight={500}>{new Date(rv.createdAt).toLocaleDateString('vi-VN')}</Typography>
+                      </Box>
+                      <Rating value={rv.rating} size="small" readOnly sx={{ color: '#b71c1c', fontSize: '1rem', mb: 1.5 }} />
+                      <Typography variant="body2" color="#5d4037" sx={{ lineHeight: 1.7 }}>{rv.comment}</Typography>
                       <Box sx={{ display: 'flex', gap: 2, mt: 1.5 }}>
                         {user?.id === rv.userId && (
                           <Button
@@ -719,14 +725,14 @@ const ProductDetailPage = () => {
                           </Button>
                         )}
                       </Box>
-                     </Box>
-                   </Box>
-                 ))}
-               </Box>
-             )}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Box>
         </Box>
-<Divider sx={{ mb: 8, borderColor: '#eee' }} />
+        <Divider sx={{ mb: 8, borderColor: '#eee' }} />
 
         {/* ════ 3. RELATED PRODUCTS ════ */}
         <Box sx={{ mb: 10 }}>
@@ -737,32 +743,32 @@ const ProductDetailPage = () => {
             </Box>
             <Button endIcon={<ArrowForward fontSize="small" />} onClick={() => navigate('/products')} sx={{ color: '#c62828', fontWeight: 600, textTransform: 'none' }}>Xem tất cả</Button>
           </Box>
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, 
-            gap: 2.5 
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
+            gap: 2.5
           }}>
             {relatedProducts.slice(0, 4).map((p, i) => (
-               <Card
-                 key={p.id}
-                 onClick={() => navigate(`/product/${p.id}`)}
-                 sx={{
-                   cursor: 'pointer', borderRadius: '12px', border: '1px solid #f0f0f0', boxShadow: 'none',
-                   transition: 'all 0.3s ease',
-                   '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }
-                 }}
-               >
-                 <Box sx={{ bgcolor: '#fbfaf9', pt: 3, px: 2, pb: 1, display: 'flex', justifyContent: 'center' }}>
-                   <CardMedia component="img" image={getFirstImage(p.images, 'https://via.placeholder.com/200')} alt={p.name}
-                     sx={{ objectFit: 'contain', height: 160, transition: 'transform 0.4s ease', '&:hover': { transform: 'scale(1.05)' } }} />
-                 </Box>
-                 <CardContent sx={{ p: 2, pb: '16px !important' }}>
-                   <Typography variant="body2" fontWeight={700} color="#1a1a1a" sx={{ mb: 1 }}>{p.name}</Typography>
-                   <Typography variant="body1" color="#c62828" fontWeight={800}>
-                     {p.isFlashSale ? formatPrice(p.price * (1 - (p.flashSaleDiscount || 0) / 100)) : formatPrice(p.price)}
-                   </Typography>
-                 </CardContent>
-               </Card>
+              <Card
+                key={p.id}
+                onClick={() => navigate(`/product/${p.id}`)}
+                sx={{
+                  cursor: 'pointer', borderRadius: '12px', border: '1px solid #f0f0f0', boxShadow: 'none',
+                  transition: 'all 0.3s ease',
+                  '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }
+                }}
+              >
+                <Box sx={{ bgcolor: '#fbfaf9', pt: 3, px: 2, pb: 1, display: 'flex', justifyContent: 'center' }}>
+                  <CardMedia component="img" image={getFirstImage(p.images, 'https://via.placeholder.com/200')} alt={p.name}
+                    sx={{ objectFit: 'contain', height: 160, transition: 'transform 0.4s ease', '&:hover': { transform: 'scale(1.05)' } }} />
+                </Box>
+                <CardContent sx={{ p: 2, pb: '16px !important' }}>
+                  <Typography variant="body2" fontWeight={700} color="#1a1a1a" sx={{ mb: 1 }}>{p.name}</Typography>
+                  <Typography variant="body1" color="#c62828" fontWeight={800}>
+                    {p.isFlashSale ? formatPrice(p.price * (1 - (p.flashSaleDiscount || 0) / 100)) : formatPrice(p.price)}
+                  </Typography>
+                </CardContent>
+              </Card>
             ))}
           </Box>
         </Box>
@@ -954,21 +960,45 @@ const ProductDetailPage = () => {
               {showBankForm && (
                 <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2, mb: 2 }}>
                   <Typography variant="subtitle2" fontWeight="bold" gutterBottom>🏦 Liên kết tài khoản ngân hàng</Typography>
-                  <TextField fullWidth size="small" label="Tên ngân hàng"
+                  <Typography variant="caption" sx={{ color: '#8c8c8c', fontWeight: 700, letterSpacing: 0.4, display: 'block', mb: 1 }}>
+                    BƯỚC 1 - THÔNG TIN TÀI KHOẢN
+                  </Typography>
+                  <TextField fullWidth size="small" select label="Chọn ngân hàng"
                     value={bankForm.bankName}
                     onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
                     sx={{ mb: 1 }}
-                  />
+                  >
+                    {BANK_OPTIONS.map((bankName) => (
+                      <MenuItem key={bankName} value={bankName}>{bankName}</MenuItem>
+                    ))}
+                  </TextField>
                   <TextField fullWidth size="small" label="Số tài khoản"
                     value={bankForm.accountNumber}
                     onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })}
                     sx={{ mb: 1 }}
                   />
-                  <TextField fullWidth size="small" label="Chủ tài khoản"
+                  <TextField fullWidth size="small" label="Tên tài khoản"
                     value={bankForm.accountName}
                     onChange={(e) => setBankForm({ ...bankForm, accountName: e.target.value })}
                     sx={{ mb: 1 }}
                   />
+                  <TextField fullWidth size="small" label="Chi nhánh ngân hàng"
+                    value={bankForm.branchName}
+                    onChange={e => setBankForm({ ...bankForm, branchName: e.target.value })}
+                    sx={{ mb: 1 }}
+                  />
+                  <TextField fullWidth size="small" label="Số điện thoại liên kết ngân hàng"
+                    value={bankForm.linkedPhone}
+                    onChange={e => setBankForm({ ...bankForm, linkedPhone: e.target.value.replace(/\D/g, '') })}
+                    sx={{ mb: 1 }}
+                  />
+                  <TextField fullWidth size="small" label="CCCD/CMND người liên kết"
+                    value={bankForm.identityNumber}
+                    onChange={e => setBankForm({ ...bankForm, identityNumber: e.target.value.replace(/\D/g, '') })}
+                    sx={{ mb: 1 }}
+                  />
+                  <FormControlLabel sx={{ display: 'block', mb: 0.5 }} control={<Checkbox size="small" checked={bankForm.agreeBankTerms} onChange={e => setBankForm({ ...bankForm, agreeBankTerms: e.target.checked })} />} label={<Typography variant="body2">Tôi xác nhận thông tin trên là đúng và đồng ý liên kết tài khoản ngân hàng.</Typography>} />
+                  <FormControlLabel sx={{ display: 'block', mb: 1 }} control={<Checkbox size="small" checked={bankForm.isDefault} onChange={e => setBankForm({ ...bankForm, isDefault: e.target.checked })} />} label={<Typography variant="body2">Đặt làm ngân hàng mặc định</Typography>} />
                   <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                     <Button variant="outlined" size="small" onClick={() => setShowBankForm(false)}>Hủy</Button>
                     <Button variant="contained" size="small" onClick={handleLinkBank}

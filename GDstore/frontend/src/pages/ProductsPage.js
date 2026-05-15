@@ -515,8 +515,14 @@ const ProductsPage = () => {
                   </Box>
                   <CardContent sx={{ p: '12px 14px !important' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                      <Rating value={4.5} size="small" readOnly sx={{ color: '#ffc107', fontSize: '0.9rem' }} />
-                      <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>(42)</Typography>
+                      <Rating 
+                        value={product.Reviews && product.Reviews.length > 0 ? product.Reviews.reduce((sum, r) => sum + r.rating, 0) / product.Reviews.length : 0} 
+                        size="small" precision={0.1} readOnly 
+                        sx={{ color: '#ffc107', fontSize: '0.9rem' }} 
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                        ({product.Reviews && product.Reviews.length > 0 ? product.Reviews.length : 'Chưa có đánh giá'})
+                      </Typography>
                     </Box>
                     <Typography variant="body2" noWrap fontWeight={600} sx={{ mb: 0.5, color: '#333' }}>{product.name}</Typography>
 

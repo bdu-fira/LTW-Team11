@@ -123,6 +123,8 @@ const ProfilePage = () => {
   // ✅ Lỗi SĐT cho từng form
   const [profilePhoneError, setProfilePhoneError] = useState('');
   const [addressPhoneError, setAddressPhoneError] = useState('');
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
 
   // Bank states
   const [banks, setBanks] = useState([]);
@@ -211,6 +213,8 @@ const ProfilePage = () => {
       setMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
       setProfilePhoneError('');
       setEditMode(false);
+      setIsEditingEmail(false);
+      setIsEditingPhone(false);
     } catch (error) {
       setMessage({ type: 'error', text: 'Cập nhật thất bại!' });
     } finally {
@@ -680,14 +684,26 @@ const ProfilePage = () => {
 
                       <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 0.8, md: 0 } }}>
                         <Typography sx={{ width: { xs: '100%', md: '150px' }, fontSize: '14px', color: '#555', fontWeight: 500, textAlign: { xs: 'left', md: 'right' }, pr: { xs: 0, md: 4 } }}>Email</Typography>
-                        <Typography sx={{ flex: 1, fontSize: '15px', color: '#333' }}>{profile.email?.replace(/(\w{2})[\w.-]+@([\w.]+\w)/, "$1***@$2")} <span style={{color:'#b71c1c', fontSize:'13px', cursor:'pointer', marginLeft:'12px'}}>Thay đổi</span></Typography>
+                        {isEditingEmail ? (
+                          <TextField size="small" fullWidth value={profile.email} onChange={(e) => setProfile({...profile, email: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fce4e4', borderRadius: '12px', border: 'none', '& fieldset': { border: 'none' } } }} />
+                        ) : (
+                          <Typography sx={{ flex: 1, fontSize: '15px', color: '#333' }}>
+                            {profile.email?.replace(/(\w{2})[\w.-]+@([\w.]+\w)/, "$1***@$2")} 
+                            <span style={{color:'#b71c1c', fontSize:'13px', cursor:'pointer', marginLeft:'12px'}} onClick={() => setIsEditingEmail(true)}>Thay đổi</span>
+                          </Typography>
+                        )}
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 0.8, md: 0 } }}>
                         <Typography sx={{ width: { xs: '100%', md: '150px' }, fontSize: '14px', color: '#555', fontWeight: 500, textAlign: { xs: 'left', md: 'right' }, pr: { xs: 0, md: 4 } }}>Số điện thoại</Typography>
-                        <Typography sx={{ flex: 1, fontSize: '15px', color: '#333' }}>
-                          ********{profile.phone.slice(-2)} <span style={{color:'#b71c1c', fontSize:'13px', cursor:'pointer', marginLeft:'12px'}}>Thay đổi</span>
-                        </Typography>
+                        {isEditingPhone ? (
+                          <TextField size="small" fullWidth value={profile.phone} error={!!profilePhoneError} helperText={profilePhoneError} onChange={(e) => setProfile({...profile, phone: e.target.value.replace(/\D/g, '')})} sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fce4e4', borderRadius: '12px', border: 'none', '& fieldset': { border: 'none' } } }} />
+                        ) : (
+                          <Typography sx={{ flex: 1, fontSize: '15px', color: '#333' }}>
+                            {profile.phone ? `********${profile.phone.slice(-2)}` : 'Chưa cập nhật'}
+                            <span style={{color:'#b71c1c', fontSize:'13px', cursor:'pointer', marginLeft:'12px'}} onClick={() => setIsEditingPhone(true)}>Thay đổi</span>
+                          </Typography>
+                        )}
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 0.8, md: 0 } }}>

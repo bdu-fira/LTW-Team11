@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Review = require('../models/Review');
 const { Op } = require('sequelize');
 
 // Lấy danh sách sản phẩm
@@ -80,7 +81,8 @@ const getProducts = async (req, res) => {
       where,
       order,
       limit: pageSize,
-      offset: pageSize * (page - 1)
+      offset: pageSize * (page - 1),
+      include: [{ model: Review, attributes: ['rating'] }]
     });
 
     console.log('📊 Trả về', products.length, 'sản phẩm');

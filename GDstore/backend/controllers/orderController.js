@@ -267,9 +267,19 @@ const adminRejectDelivery = async (req, res) => {
       const oldImagePath = path.join(__dirname, '..', order.deliveryProofImage);
       if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
     }
-    await order.update({ status: 'out_for_delivery', deliveryProofImage: null, deliveryNote: null }, { transaction });
+    await order.update({ status: 'cancelled', deliveryProofImage: null, deliveryNote: null }, { transaction });
+    
+    // Khôi phục số lượng sản phẩm trong kho khi hủy đơn
+    const orderItems = await OrderItem.findAll({ where: { orderId: order.id }, transaction });
+    for (const item of orderItems) {
+      const product = await Product.findByPk(item.productId, { transaction });
+      if (product) {
+        await product.update({ stock: product.stock + item.quantity }, { transaction });
+      }
+    }
+
     await transaction.commit();
-    res.json({ success: true, message: 'Đã từ chối. Đơn chuyển về "Shipper đang giao" để thử lại.', order });
+    res.json({ success: true, message: 'Đã từ chối xác nhận giao hàng. Đơn hàng đã bị hủy.', order });
   } catch (error) {
     await transaction.rollback();
     console.error('Lỗi adminRejectDelivery:', error);
@@ -382,6 +392,30 @@ const createDirectOrder = async (req, res) => {
   }
 };
 
+// Xóa đơn hàng (Admin)
+const deleteOrder = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const order = await Order.findByPk(req.params.id, { transaction });
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+    }
+    
+    // Nếu đơn hàng bị xóa khi chưa bị hủy, cần hoàn lại số lượng nếu đã bị trừ (pending -> processing/shipped/delivered)
+    // Tạm thời, xóa luôn đơn hàng cùng với các OrderItem liên quan
+    await OrderItem.destroy({ where: { orderId: order.id }, transaction });
+    await order.destroy({ transaction });
+
+    await transaction.commit();
+    res.json({ success: true, message: 'Đã xóa đơn hàng thành công' });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Lỗi deleteOrder:', error);
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
+  }
+};
+
 module.exports = {
   createOrder,
   createDirectOrder,
@@ -395,5 +429,6 @@ module.exports = {
   adminConfirmDelivered,
   adminRejectDelivery,
   updateOrderStatus,
-  cancelOrder
+  cancelOrder,
+  deleteOrder
 };

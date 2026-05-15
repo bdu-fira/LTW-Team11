@@ -14,7 +14,8 @@ const {
   adminConfirmDelivered,
   adminRejectDelivery,
   updateOrderStatus,
-  cancelOrder
+  cancelOrder,
+  deleteOrder
 } = require('../controllers/orderController');
 
 // ✅ Routes cố định phải đặt TRƯỚC route động /:id
@@ -56,5 +57,8 @@ router.put('/:id/admin-reject-delivery', protect, admin, adminRejectDelivery);
 
 // Admin: cập nhật trạng thái đơn hàng
 router.put('/:id', protect, admin, updateOrderStatus);
+
+// Admin: xóa đơn hàng
+router.delete('/:id', protect, admin, deleteOrder);
 
 module.exports = router;

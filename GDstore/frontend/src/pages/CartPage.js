@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Paper, Grid, Box, IconButton, Button, TextField, Divider, Card, CardMedia, CardContent,
   Dialog, DialogTitle, DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio, Alert, Snackbar,
-  CircularProgress, Chip
+  CircularProgress, Chip, Checkbox, MenuItem
 } from '@mui/material';
 import { Add, Remove, DeleteOutline, Lock, ArrowBack, LocalAtm, CreditCard, AccountBalance, ArrowForward } from '@mui/icons-material';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import { getFirstImage } from '../utils/imageUtils';
+
+const BANK_OPTIONS = [
+  'Vietcombank', 'BIDV', 'VietinBank', 'Agribank', 'Techcombank', 'MB Bank',
+  'ACB', 'TPBank', 'VPBank', 'Sacombank', 'HDBank', 'SHB', 'SeABank', 'VIB',
+  'OCB', 'MSB'
+];
 
 // ✅ Validate SĐT: bắt đầu bằng 0, đúng 10 số
 const phoneRegex = /^0\d{9}$/;
@@ -50,9 +56,7 @@ const CartPage = () => {
   const [userBanks, setUserBanks] = useState([]);
   const [showBankForm, setShowBankForm] = useState(false);
   const [bankForm, setBankForm] = useState({
-    bankName: '',
-    accountNumber: '',
-    accountName: ''
+    bankName: '', accountNumber: '', accountName: '', branchName: '', linkedPhone: '', identityNumber: '', agreeBankTerms: false, isDefault: false
   });
   const [submittingBank, setSubmittingBank] = useState(false);
 
@@ -60,7 +64,7 @@ const CartPage = () => {
     fetchRelatedProducts();
     fetchUserBanks();
     fetchUserAddresses();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart]);
 
   const fetchRelatedProducts = async () => {
@@ -137,7 +141,23 @@ const CartPage = () => {
 
   const handleLinkBank = async () => {
     if (!bankForm.bankName || !bankForm.accountNumber || !bankForm.accountName) {
-      setMessage({ type: 'error', text: 'Vui lòng nhập đầy đủ thông tin ngân hàng' });
+      setMessage({ type: 'error', text: 'Vui lòng điền đủ tên ngân hàng, số tài khoản và tên chủ tài khoản' });
+      return;
+    }
+    if (!bankForm.branchName || !bankForm.linkedPhone || !bankForm.identityNumber) {
+      setMessage({ type: 'error', text: 'Vui lòng hoàn tất thông tin chi nhánh, số điện thoại và CCCD/CMND' });
+      return;
+    }
+    if (!/^\d{9,12}$/.test(bankForm.identityNumber)) {
+      setMessage({ type: 'error', text: 'CCCD/CMND phải từ 9 đến 12 chữ số' });
+      return;
+    }
+    if (!/^\d{10}$/.test(bankForm.linkedPhone)) {
+      setMessage({ type: 'error', text: 'Số điện thoại liên kết phải gồm 10 chữ số' });
+      return;
+    }
+    if (!bankForm.agreeBankTerms) {
+      setMessage({ type: 'error', text: 'Bạn cần đồng ý điều khoản liên kết tài khoản ngân hàng' });
       return;
     }
 
@@ -145,11 +165,11 @@ const CartPage = () => {
     try {
       await API.post('/users/banks', {
         ...bankForm,
-        isDefault: userBanks.length === 0
+        isDefault: userBanks.length === 0 ? true : bankForm.isDefault
       });
       setMessage({ type: 'success', text: 'Liên kết ngân hàng thành công!' });
       setShowBankForm(false);
-      setBankForm({ bankName: '', accountNumber: '', accountName: '' });
+      setBankForm({ bankName: '', accountNumber: '', accountName: '', branchName: '', linkedPhone: '', identityNumber: '', agreeBankTerms: false, isDefault: false });
       fetchUserBanks();
     } catch (error) {
       setMessage({ type: 'error', text: error.response?.data?.message || 'Liên kết thất bại, vui lòng thử lại' });
@@ -568,21 +588,45 @@ const CartPage = () => {
                 {showBankForm && (
                   <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2, mb: 2 }}>
                     <Typography variant="subtitle2" fontWeight="bold" gutterBottom>🏦 Liên kết tài khoản ngân hàng</Typography>
-                    <TextField fullWidth size="small" label="Tên ngân hàng"
+                    <Typography variant="caption" sx={{ color: '#8c8c8c', fontWeight: 700, letterSpacing: 0.4, display: 'block', mb: 1 }}>
+                      BƯỚC 1 - THÔNG TIN TÀI KHOẢN
+                    </Typography>
+                    <TextField fullWidth size="small" select label="Chọn ngân hàng"
                       value={bankForm.bankName}
                       onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
                       sx={{ mb: 1 }}
-                    />
+                    >
+                      {BANK_OPTIONS.map((bankName) => (
+                        <MenuItem key={bankName} value={bankName}>{bankName}</MenuItem>
+                      ))}
+                    </TextField>
                     <TextField fullWidth size="small" label="Số tài khoản"
                       value={bankForm.accountNumber}
                       onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })}
                       sx={{ mb: 1 }}
                     />
-                    <TextField fullWidth size="small" label="Chủ tài khoản"
+                    <TextField fullWidth size="small" label="Tên tài khoản"
                       value={bankForm.accountName}
                       onChange={(e) => setBankForm({ ...bankForm, accountName: e.target.value })}
                       sx={{ mb: 1 }}
                     />
+                    <TextField fullWidth size="small" label="Chi nhánh ngân hàng"
+                      value={bankForm.branchName}
+                      onChange={e => setBankForm({ ...bankForm, branchName: e.target.value })}
+                      sx={{ mb: 1 }}
+                    />
+                    <TextField fullWidth size="small" label="Số điện thoại liên kết ngân hàng"
+                      value={bankForm.linkedPhone}
+                      onChange={e => setBankForm({ ...bankForm, linkedPhone: e.target.value.replace(/\D/g, '') })}
+                      sx={{ mb: 1 }}
+                    />
+                    <TextField fullWidth size="small" label="CCCD/CMND người liên kết"
+                      value={bankForm.identityNumber}
+                      onChange={e => setBankForm({ ...bankForm, identityNumber: e.target.value.replace(/\D/g, '') })}
+                      sx={{ mb: 1 }}
+                    />
+                    <FormControlLabel sx={{ display: 'block', mb: 0.5 }} control={<Checkbox size="small" checked={bankForm.agreeBankTerms} onChange={e => setBankForm({ ...bankForm, agreeBankTerms: e.target.checked })} />} label={<Typography variant="body2">Tôi xác nhận thông tin trên là đúng và đồng ý liên kết tài khoản ngân hàng.</Typography>} />
+                    <FormControlLabel sx={{ display: 'block', mb: 1 }} control={<Checkbox size="small" checked={bankForm.isDefault} onChange={e => setBankForm({ ...bankForm, isDefault: e.target.checked })} />} label={<Typography variant="body2">Đặt làm ngân hàng mặc định</Typography>} />
                     <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                       <Button variant="outlined" size="small" onClick={() => setShowBankForm(false)}>Hủy</Button>
                       <Button variant="contained" size="small" onClick={handleLinkBank}
@@ -649,10 +693,10 @@ const CartPage = () => {
             </Button>
           </Box>
 
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(5, 1fr)' }, 
-            gap: 2 
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(5, 1fr)' },
+            gap: 2
           }}>
             {relatedProducts.map((p, i) => (
               <Box key={p.id} sx={{ animation: `staggerReveal 0.5s ease ${i * 0.06}s both` }}>

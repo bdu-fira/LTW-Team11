@@ -105,6 +105,9 @@ const AdminPage = () => {
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [openOrderDetailsDialog, setOpenOrderDetailsDialog] = useState(false);
 
+  // Dành cho Dialog xóa đơn hàng
+  const [deleteOrderConfirmDialog, setDeleteOrderConfirmDialog] = useState({ open: false, orderId: null });
+
   // Dành cho Dialog xác nhận giao hàng (delivery_confirmed)
   const [deliveryConfirmDialog, setDeliveryConfirmDialog] = useState({ open: false, order: null, action: '' });
   const [deliveryImageDialog, setDeliveryImageDialog] = useState({ open: false, url: '' });
@@ -276,7 +279,7 @@ const AdminPage = () => {
     try {
       await API.put(`/products/${product.id}`, {
         ...product,
-        images: JSON.stringify(Array.isArray(product.images) ? product.images : []),
+        images: JSON.stringify(parseImages(product.images)),
         isFlashSale: enabling,
         flashSaleDiscount: enabling ? parseInt(discount) : 0,
       });
@@ -299,7 +302,7 @@ const AdminPage = () => {
     try {
       await API.put(`/products/${product.id}`, {
         ...product,
-        images: JSON.stringify(Array.isArray(product.images) ? product.images : []),
+        images: JSON.stringify(parseImages(product.images)),
         isFlashSale: true,
         flashSaleDiscount: parseInt(newDiscount),
       });
@@ -608,6 +611,26 @@ const AdminPage = () => {
     }
   };
 
+  const handleDeleteOrder = (orderId) => {
+    setDeleteOrderConfirmDialog({ open: true, orderId });
+  };
+
+  const handleDeleteOrderConfirm = async () => {
+    const orderId = deleteOrderConfirmDialog.orderId;
+    setDeleteOrderConfirmDialog({ open: false, orderId: null });
+    if (!orderId) return;
+
+    try {
+      await API.delete(`/orders/${orderId}`);
+      setMessage({ type: 'success', text: 'Xóa đơn hàng thành công' });
+      fetchData();
+      fetchStats();
+    } catch (error) {
+      console.error('Lỗi xóa đơn hàng:', error);
+      setMessage({ type: 'error', text: 'Lỗi xóa đơn hàng' });
+    }
+  };
+
   const handleOpenOrderDetails = (order) => {
     setSelectedOrderDetails(order);
     setOpenOrderDetailsDialog(true);
@@ -624,7 +647,7 @@ const AdminPage = () => {
         type: 'success',
         text: action === 'confirm'
           ? '✅ Đã xác nhận giao hàng thành công!'
-          : '↩️ Đã từ chối, đơn chuyển về "Đang giao"'
+          : '❌ Đã từ chối, đơn hàng đã bị hủy'
       });
       setDeliveryConfirmDialog({ open: false, order: null, action: '' });
       fetchData();
@@ -679,10 +702,9 @@ const AdminPage = () => {
 
   const isStatusDisabled = (currentStatus, optionValue) => {
     if (currentStatus === optionValue) return false;
-    if (['cancelled', 'delivered', 'out_for_delivery', 'delivery_confirmed'].includes(currentStatus)) return true;
+    if (['cancelled', 'delivered', 'out_for_delivery', 'delivery_confirmed', 'shipped'].includes(currentStatus)) return true;
     if (currentStatus === 'pending')    return !['processing', 'cancelled'].includes(optionValue);
     if (currentStatus === 'processing') return !['shipped', 'cancelled'].includes(optionValue);
-    if (currentStatus === 'shipped')    return !['delivered', 'cancelled'].includes(optionValue);
     return true;
   };
 
@@ -1406,7 +1428,8 @@ const AdminPage = () => {
                               </TableCell>
                               <TableCell sx={{ borderBottom: '1px solid #f9ecec', textAlign: 'right', pr: 3 }}>
                                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                                  <IconButton size="small" onClick={() => handleOpenOrderDetails(order)} sx={{ color: '#555' }}><Visibility fontSize="small" /></IconButton>
+                                  <IconButton size="small" title="Xem chi tiết" onClick={() => handleOpenOrderDetails(order)} sx={{ color: '#555' }}><Visibility fontSize="small" /></IconButton>
+                                  <IconButton size="small" title="Xóa đơn hàng" onClick={() => handleDeleteOrder(order.id)} sx={{ color: '#f44336' }}><Delete fontSize="small" /></IconButton>
 
                                   {/* Nếu đơn delivery_confirmed: hiện nút xem ảnh + xác nhận/từ chối */}
                                   {order.status === 'delivery_confirmed' ? (
@@ -2603,6 +2626,37 @@ const AdminPage = () => {
               </Button>
             </>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog Xác nhận Xóa Đơn Hàng */}
+      <Dialog
+        open={deleteOrderConfirmDialog.open}
+        onClose={() => setDeleteOrderConfirmDialog({ open: false, orderId: null })}
+        PaperProps={{ sx: { borderRadius: 3, padding: 1, minWidth: 400 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
+          Xác nhận xóa đơn hàng
+        </DialogTitle>
+        <DialogContent>
+          <Typography>Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng này không?</Typography>
+          <Typography variant="body2" color="error" sx={{ mt: 1 }}>Thao tác này không thể hoàn tác.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setDeleteOrderConfirmDialog({ open: false, orderId: null })}
+            sx={{ color: '#666' }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleDeleteOrderConfirm}
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: 2 }}
+          >
+            Xóa vĩnh viễn
+          </Button>
         </DialogActions>
       </Dialog>
 
